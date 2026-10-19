@@ -254,3 +254,9 @@ async def test_status_and_navigate(monkeypatch):
     assert result["connected"] is True and result["account"] == "Example MSP"
     nav = await _call(monkeypatch, Recorder(), "huntress_navigate", {"domain": "billing"})
     assert "huntress_billing_reports_list" in nav["tools"]
+
+
+async def test_large_limits_are_capped(monkeypatch):
+    rec = Recorder({"agents": {"agents": [], "pagination": {"next_page_token": None}}})
+    await _call(monkeypatch, rec, "huntress_agents_list", {"limit": 500})
+    assert rec.requests[0].url.params["limit"] == "200"

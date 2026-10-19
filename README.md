@@ -30,7 +30,7 @@ A request to `/mcp` without both headers gets HTTP 401 naming the missing one.
 
 ## Tools
 
-All tools return a JSON string. List tools take `limit` (default 10, max 500) and `page_token`
+All tools return a JSON string. List tools take `limit` (default 10, max 200; larger values are capped) and `page_token`
 and return `{count, has_more, next_page_token}`; pass `next_page_token` back as `page_token`
 for the next page. **write** marks tools that change data; **confirm** marks tools that also
 need `confirm: true`.

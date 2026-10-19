@@ -17,7 +17,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 API_BASE_URL = "https://api.huntress.io/v1"
 DEFAULT_LIMIT = 10
-MAX_LIMIT = 500
+MAX_LIMIT = 200
+# Earlier versions accepted up to 500 per page; such values are still accepted and capped at MAX_LIMIT.
+ACCEPTED_LIMIT = 500
 
 
 class Settings(BaseSettings):

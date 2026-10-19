@@ -23,7 +23,7 @@ from pydantic import Field
 
 from .._json import dump_json_capped, error_envelope
 from ..api_client import HuntressClient, HuntressError
-from ..config import DEFAULT_LIMIT, MAX_LIMIT
+from ..config import ACCEPTED_LIMIT, DEFAULT_LIMIT, MAX_LIMIT
 
 logger = logging.getLogger("huntress_mcp.tools")
 
@@ -41,7 +41,7 @@ NOT_CONFIGURED = error_envelope(
 
 RecordId = Annotated[int, Field(description="Numeric Huntress id.", ge=1)]
 OrganizationFilter = Annotated[int | None, Field(description="Only this organization id.", ge=1)]
-Limit = Annotated[int | None, Field(description=f"Records per page (default {DEFAULT_LIMIT}, max {MAX_LIMIT}).", ge=1, le=MAX_LIMIT)]
+Limit = Annotated[int | None, Field(description=f"Records per page (default {DEFAULT_LIMIT}, max {MAX_LIMIT}; larger values are capped).", ge=1, le=ACCEPTED_LIMIT)]
 PageToken = Annotated[str | None, Field(description="next_page_token from the previous page.")]
 Confirm = Annotated[bool | None, Field(description="Must be true, set only after the user approved this exact action.")]
 
@@ -59,7 +59,7 @@ def unwrap(payload: Any, key: str) -> Any:
 
 async def list_page(client: HuntressClient, path: str, key: str, params: dict[str, Any], limit: int | None, page_token: str | None) -> dict:
     """GET a list endpoint and return {<key>, count, has_more, next_page_token}."""
-    payload = await client.get(path, compact(params) | compact({"limit": limit or DEFAULT_LIMIT, "page_token": page_token}))
+    payload = await client.get(path, compact(params) | compact({"limit": min(limit or DEFAULT_LIMIT, MAX_LIMIT), "page_token": page_token}))
     items = payload.get(key) if isinstance(payload, dict) else payload
     items = items if isinstance(items, list) else []
     paging = payload.get("pagination") if isinstance(payload, dict) else None
