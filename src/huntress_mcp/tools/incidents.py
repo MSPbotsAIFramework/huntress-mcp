@@ -31,6 +31,7 @@ from ._common import (
     PageToken,
     RecordId,
     compact,
+    enum_value,
     list_page,
     not_confirmed,
     run_tool,
@@ -63,16 +64,22 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def huntress_incidents_list(
         limit: Limit = None,
         page_token: PageToken = None,
-        status: Annotated[Status | None, Field(description="sent = open and awaiting the partner.")] = None,
-        severity: Annotated[Severity | None, Field(description="Severity.")] = None,
-        platform: Annotated[Platform | None, Field(description="Platform the incident came from.")] = None,
+        status: Annotated[Status | str | None, Field(description="sent = open and awaiting the partner.")] = None,
+        severity: Annotated[Severity | str | None, Field(description="Severity.")] = None,
+        platform: Annotated[Platform | str | None, Field(description="Platform the incident came from.")] = None,
         organization_id: OrganizationFilter = None,
         agent_id: Annotated[int | None, Field(description="Only incidents of this agent.", ge=1)] = None,
     ) -> str:
         """List incident reports with severity, status, platform, organization, agent and indicators."""
 
         async def action(client: HuntressClient) -> dict:
-            params = {"status": status, "severity": severity, "platform": platform, "organization_id": organization_id, "agent_id": agent_id}
+            params = {
+                "status": enum_value(status, Status),
+                "severity": enum_value(severity, Severity),
+                "platform": enum_value(platform, Platform),
+                "organization_id": organization_id,
+                "agent_id": agent_id,
+            }
             return await list_page(client, "incident_reports", "incident_reports", params, limit, page_token)
 
         return await run_tool("huntress_incidents_list", client_factory, action)

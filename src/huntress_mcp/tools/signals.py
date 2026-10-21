@@ -19,7 +19,18 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from ..api_client import HuntressClient
-from ._common import READ_ONLY, ClientFactory, Limit, OrganizationFilter, PageToken, RecordId, list_page, run_tool, unwrap
+from ._common import (
+    READ_ONLY,
+    ClientFactory,
+    Limit,
+    OrganizationFilter,
+    PageToken,
+    RecordId,
+    enum_value,
+    list_page,
+    run_tool,
+    unwrap,
+)
 
 EntityType = Literal["user_entity", "source", "mailbox", "service_principal", "agent", "identity"]
 
@@ -31,7 +42,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
         page_token: PageToken = None,
         investigated_at_min: Annotated[str | None, Field(description="ISO 8601: investigated on or after.")] = None,
         investigated_at_max: Annotated[str | None, Field(description="ISO 8601: investigated on or before.")] = None,
-        entity_type: Annotated[EntityType | None, Field(description="Type of entity the signal came from.")] = None,
+        entity_type: Annotated[EntityType | str | None, Field(description="Type of entity the signal came from.")] = None,
         entity_id: Annotated[str | None, Field(description="Entity id (with entity_type).")] = None,
         organization_id: OrganizationFilter = None,
         types: Annotated[str | None, Field(description="Comma-separated signal types, e.g. Antivirus, Process Detection.")] = None,
@@ -43,7 +54,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
             params = {
                 "investigated_at_min": investigated_at_min,
                 "investigated_at_max": investigated_at_max,
-                "entity_type": entity_type,
+                "entity_type": enum_value(entity_type, EntityType),
                 "entity_id": entity_id,
                 "organization_id": organization_id,
                 "types": types,

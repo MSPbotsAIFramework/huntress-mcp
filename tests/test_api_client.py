@@ -260,3 +260,33 @@ async def test_large_limits_are_capped(monkeypatch):
     rec = Recorder({"agents": {"agents": [], "pagination": {"next_page_token": None}}})
     await _call(monkeypatch, rec, "huntress_agents_list", {"limit": 500})
     assert rec.requests[0].url.params["limit"] == "200"
+
+
+# ---- compatibility: enum params accept any casing (normalized) and unknown values (passed through)
+
+
+@pytest.mark.parametrize(
+    "tool,args,expected",
+    [
+        ("huntress_summary_reports_list", {"type": "Monthly_Summary"}, {"type": "monthly_summary"}),
+        ("huntress_summary_reports_list", {"type": "weekly_summary"}, {"type": "weekly_summary"}),
+        (
+            "huntress_incidents_list",
+            {"status": "CLOSED", "severity": "Critical", "platform": "Microsoft_365"},
+            {"status": "closed", "severity": "critical", "platform": "microsoft_365"},
+        ),
+        (
+            "huntress_incidents_list",
+            {"status": "investigating", "severity": "medium", "platform": "ios"},
+            {"status": "investigating", "severity": "medium", "platform": "ios"},
+        ),
+        ("huntress_signals_list", {"entity_type": "Mailbox"}, {"entity_type": "mailbox"}),
+        ("huntress_signals_list", {"entity_type": "device"}, {"entity_type": "device"}),
+    ],
+)
+async def test_enum_params_normalized_or_passed_through(monkeypatch, tool, args, expected):
+    rec = Recorder()
+    result = await _call(monkeypatch, rec, tool, args)
+    assert "error" not in result
+    params = rec.requests[0].url.params
+    assert {key: params[key] for key in expected} == expected

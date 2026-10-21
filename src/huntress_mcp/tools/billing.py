@@ -19,9 +19,21 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from ..api_client import HuntressClient
-from ._common import READ_ONLY, ClientFactory, Limit, OrganizationFilter, PageToken, RecordId, list_page, run_tool, unwrap
+from ._common import (
+    READ_ONLY,
+    ClientFactory,
+    Limit,
+    OrganizationFilter,
+    PageToken,
+    RecordId,
+    enum_value,
+    list_page,
+    run_tool,
+    unwrap,
+)
 
 InvoiceStatus = Literal["open", "paid", "failed", "partial_refund", "full_refund", "draft", "voided", "processing"]
+ReportType = Literal["monthly_summary", "quarterly_summary", "yearly_summary"]
 
 
 def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
@@ -54,14 +66,12 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
         period_min: Annotated[str | None, Field(description="ISO 8601 date: reports for periods from this date.")] = None,
         period_max: Annotated[str | None, Field(description="ISO 8601 date: reports for periods up to this date.")] = None,
         organization_id: OrganizationFilter = None,
-        type: Annotated[
-            Literal["monthly_summary", "quarterly_summary", "yearly_summary"] | None, Field(description="Report period type.")
-        ] = None,
+        type: Annotated[ReportType | str | None, Field(description="Report period type.")] = None,
     ) -> str:
         """List summary reports (monthly / quarterly / yearly security summaries per organization)."""
 
         async def action(client: HuntressClient) -> dict:
-            params = {"period_min": period_min, "period_max": period_max, "organization_id": organization_id, "type": type}
+            params = {"period_min": period_min, "period_max": period_max, "organization_id": organization_id, "type": enum_value(type, ReportType)}
             return await list_page(client, "reports", "reports", params, limit, page_token)
 
         return await run_tool("huntress_summary_reports_list", client_factory, action)
